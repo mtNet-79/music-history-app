@@ -1,5 +1,5 @@
 import os
-from sqlalchemy import Column, String, Integer, UniqueConstraint, relationship, back_populates, ForeignKey, create_engine
+from sqlalchemy import Column, String, Integer, UniqueConstraint, DateTime, ForeignKey, create_engine
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 import json
@@ -23,7 +23,7 @@ def setup_db(app):
     db.app = app
     db.init_app(app)
     migrate.init_app(app, db)
-    db.create_all()
+    # db.create_all()
 
 
 composer_performer = db.Table('composer_performer',
@@ -49,20 +49,20 @@ class Composer(db.Model):
     id = Column(Integer, primary_key=True)
     name = Column(db.String(120))
     years = Column(IntRangeType)
-    performers = relationship('Performer',
+    performers = db.relationship('Performer',
                               secondary=composer_performer,
-                              backref=back_populates('composers', lazy=True))
+                              backref=db.backref('composers', lazy=True))
     nationality = Column(String)
-    styles: relationship(
-        "Style", backref=back_populates('composers', lazy=True))
-    period_id:  Column(Integer, ForeignKey('periods.id'))
-    compostitions: relationship(
-        'Composition', backref=back_populates('composers', lazy=True))
-    contemporaries: relationship('Composer',
-                                 sedondary=contemporaries,
+    styles = db.relationship(
+        "Style", backref=db.backref('composers', lazy=True))
+    period_id = Column(Integer, ForeignKey('periods.id'))
+    compostitions = db.relationship(
+        'Composition', backref=db.backref('composers', lazy=True))
+    contemporaries = db.relationship('Composer',
+                                 secondary=contemporaries,
                                  primaryjoin=id == contemporaries.c.composer_id,
                                  secondaryjoin=id == contemporaries.c.contemporary_id,)
-    timestamp = db.Column(
+    timestamp = Column(
         DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
     )
 
@@ -127,15 +127,15 @@ class Performer(db.Model):
     name = Column(String(120))
     title = Column(String(250))
     years = Column(IntRangeType)
-    composers = relationship('Composer',
+    composers = db.relationship('Composer',
                              secondary=composer_performer,
-                             backref=back_populates('performers', lazy=True))
+                             backref=db.backref('performers', lazy=True))
     nationality = Column(String)
-    styles: relationship(
-        "Style", backref=back_populates('performers', lazy=True))
-    recordings: relationship(
-        'Recording', backref=back_populates('performers', lazy=True))
-    rating: Column(Integer)
+    styles = db.relationship(
+        "Style", backref=db.backref('performers', lazy=True))
+    recordings = db.relationship(
+        'Recording', backref=db.backref('performers', lazy=True))
+    rating = Column(Integer)
 
     def __repr__(self):
         return f'<Performer {self.name}>'
@@ -146,8 +146,8 @@ class Period(db.Model):
     id = Column(Integer, primary_key=True)
     name = Column(String(120))
     years = Column(IntRangeType)
-    composers: relationship(
-        'Composer', backref=back_populates('periods', lazy=True))
+    composers = db.relationship(
+        'Composer', backref=db.backref('periods', lazy=True))
 
     def __repr__(self):
         return f'<Period {self.name}>'
@@ -157,8 +157,8 @@ class Compositions(db.Model):
     __tablename__ = 'compositions'
     id = Column(Integer, primary_key=True)
     name = Column(String(300))
-    year: Column(Integer)
-    composer_id: Column(Integer, ForeignKey('composers.id'))
+    year = Column(Integer)
+    composer_id = Column(Integer, ForeignKey('composers.id'))
 
     def __repr__(self):
         return f'<Composition {self.name}>'
@@ -168,8 +168,8 @@ class Recording(db.Model):
     __tablename__ = 'recordings'
     id = Column(Integer, primary_key=True)
     name = Column(String(300))
-    year: Column(Integer)
-    performer_id: Column(Integer, ForeignKey('performers.id'))
+    year = Column(Integer)
+    performer_id = Column(Integer, ForeignKey('performers.id'))
 
     def __repr__(self):
         return f'<Recording {self.name}>'

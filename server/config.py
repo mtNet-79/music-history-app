@@ -5,8 +5,9 @@ basedir = path.abspath(path.dirname(__file__))
 load_dotenv(path.join(basedir, '.env'))
 
 password = environ.get('PASSWORD')
+postgres_role = environ.get('ROLE_NAME')
 database_name = 'music_history'
-database_path = 'postgres://{}:{}@{}/{}'.format('postgres', password, 'localhost:5432', database_name)
+database_path = 'postgresql://{}:{}@{}/{}'.format(postgres_role, password, 'localhost:5432', database_name)
 
 
 class Config:
