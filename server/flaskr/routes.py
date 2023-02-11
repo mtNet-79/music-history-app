@@ -1,13 +1,10 @@
 from flask import Flask, request, abort, jsonify
-from flask_cors import CORS
-# from flask import current_app
-from models import Composer
-# from flaskr import app
+from flask_cors import CORS, cross_origin
 from flask import Blueprint
 import random
 from random import choice
 
-main = Blueprint('main', __name__)
+api = Blueprint('api', __name__)
 
 
 ITEMS_PER_PAGE = 10
@@ -32,12 +29,13 @@ def create_dict(arr):
         cats_dict[k] = v
     return cats_dict
 
-
+from .models.composer import Composer
 # IMPLEMENT CROSS-ORIGIN RESOURCE SHARING FOR ALL ORIGINS
-# CORS(main, origins=["*"])
+# CORS(api, origins=["*"])
+CORS(api, resources={r"/api/*": {"origins": "*"}})
 
 
-@main.after_request
+@api.after_request
 def after_request(response):
     # response.headers.add('Access-Control-Allow-Origin', '*')
     response.headers.add('Access-Control-Allow-Headers',
@@ -49,10 +47,13 @@ def after_request(response):
 # ----------------------------HOME PAGE ROUTES-----------------------------------------#
 
 
-@main.route("/composers")
+@api.route("/composers")
+@cross_origin()
 def get_composers():
     sltcn = Composer.query.order_by(Composer.id).all()
+    print(f"get slctn {sltcn}")
     current_slctn = paginate_results(request, sltcn)
+    print(f"get current_slctn {current_slctn}")
     # cats = Category.query.all()
 
     # formatted_cats = [cat.format() for cat in cats]
@@ -71,187 +72,222 @@ def get_composers():
     )
 
 
-@main.route('/categories/<int:cat_id>/questions')
-def get_questions_by_category(cat_id):
-    try:
-        cat = Category.query.filter(Category.id == cat_id).one_or_none()
-
-        questions = Question.query.filter(Question.category_id == cat_id).all()
-
-        curr_questions = paginate_results(request, questions)
-
-        return jsonify({
-            'success': True,
-            'questions': curr_questions,
-            'total_questions': len(questions),
-            'current_category': cat.type
-        })
-    except:
-        abort(404)
-
-
-@main.route("/questions", methods=['POST'])
-def search_question_by_term():
+@api.route("/composers/create", methods=['POST'])
+def create_composer():
+    # try:
     body = request.get_json()
 
-    search_term = body.get('searchTerm', None)
+    composer_name = body.get('name')
+    years = body.get('years')
+    nationality = body.get('nationality')
+    setID = body.get('id', None)
 
-    try:
-        questions = Question.query.filter(
-            Question.question.like(f"%{search_term}%")).all()
+    if setID:
+        composer = Composer(
+            name=composer_name,
+            years=years,
+            nationality=nationality,
+            id=setID
+        )
+    else:
+        composer = Composer(
+            name=composer_name,
+            years=years,
+            nationality=nationality
+        )
 
-        pagedQueryRes = paginate_results(request, questions)
+    composer.insert()
 
-        return jsonify({
-            'success': True,
-            'questions': pagedQueryRes,
-            'totalQuestions': len(questions)
-        })
-
-    except:
-        abort(500)
-
-
-@main.route("/questions/<int:qid>", methods=['DELETE'])
-def delete_question(qid):
-    question = Question.query.filter(Question.id == qid).one_or_none()
-    if question is None:
-        abort(404)
-
-    question.delete()
-    slctn = Question.query.order_by(Question.id).all()
-    curr_questions = paginate_results(request, slctn)
+    slctn = Composer.query.order_by(Composer.id).all()
+    current_slctn = paginate_results(request, slctn)
 
     return jsonify({
         'success': True,
-        'deleted': qid,
-        'questions': curr_questions,
-        'total_questions': len(slctn)
+        'created': composer.id,
+        'composers': current_slctn,
+        'total_Composers': len(slctn)
+    })
+    # except:
+    #     abort(405)
+
+
+@api.route("/composers/<int:composer_id>")
+def get_Composer(composer_id):
+    # print(f"composer id {composer_id}")
+    composer = Composer.query.get(composer_id)
+
+    formatted_composer = composer.format()
+
+    return jsonify({
+        'success': True,
+        'composer': formatted_composer
+    })
+    
+"""Performer routes"""
+
+@api.route("/performers")
+def get_performers():
+    total = Performer.query.order_by(Performer.id).all()
+    current_view = paginate_results(request, total)
+    
+    return jsonify({
+        "success": True,
+        "performers": current_view,
+        "total_composers": len(total),
+        "current_category": 'all'
+    })
+
+@api.route("/performers/create", methods=['POST'])
+def create_performer():
+    req_body = request.get_json()
+    name = req_body.get("name")
+    years = req_body.get("years")
+    nationality = req_body.get("nationality")
+    
+    performer = Performer(
+        name=name,
+        years=years,
+        nationality=nationality
+    )
+    
+    db.session.add(performer)
+    db.session.commit()
+    
+    total = Performer.query.order_by(Performer.id).all()
+    current_view = paginate_results(request, total)
+    
+    return jsonify({
+        "success": True,
+        "created":performer.id,
+        "performers": current_view,
+        "total_performers_count": len(total)
+    })
+    
+    
+@api.route('/performers/<int:pkey_id>')
+def get_performer_by_id(pkey_id):
+    try:
+        performer = Performer.query.filter(Performer.id == pkey_id).one_or_none()
+
+        formatted_performer = performer.format()
+
+        return jsonify({
+            'success': True,
+            'performer': formatted_performer
+        })
+    except:
+        abort(404)
+
+
+# @api.route("/composers/create", methods=['POST'])
+# def search_Composer_by_term():
+#     body = request.get_json()
+
+#     search_term = body.get('searchTerm', None)
+
+#     try:
+#         Composers = Composer.query.filter(
+#             Composer.Composer.like(f"%{search_term}%")).all()
+
+#         pagedQueryRes = paginate_results(request, Composers)
+
+#         return jsonify({
+#             'success': True,
+#             'Composers': pagedQueryRes,
+#             'totalComposers': len(Composers)
+#         })
+
+#     except:
+#         abort(500)
+
+
+@api.route("/performers/<int:pkey_id>", methods=['DELETE'])
+def delete_Composer(qid):
+    performer = Performer.query.filter(Performer.id == pkey_id).one_or_none()
+    if performer is None:
+        abort(404)
+
+    db.session.delete(performer)
+    db.session.commit()
+    
+    total = Performer.query.order_by(Performer.id).all()
+    current_view = paginate_results(request, total)
+
+    return jsonify({
+        'success': True,
+        'deleted': pkey_id,
+        'Performers': current_view,
+        'total_Performerss': len(total)
     })
 
 # ----------------------ADD PAGE-------------------------------#
 
 
-@main.route("/categories")
-def get_all_categories():
-    cats = Category.query.order_by(Category.id).all()
-    formatted_categories = [cat.format() for cat in cats]
-    cats_dict = create_dict(formatted_categories)
+# @api.route("/categories")
+# def get_all_categories():
+#     cats = Category.query.order_by(Category.id).all()
+#     formatted_categories = [cat.format() for cat in cats]
+#     cats_dict = create_dict(formatted_categories)
 
-    if len(cats) == 0:
-        abort(500)
-    return jsonify({
-        "success": True,
-        "categories": cats_dict
-    })
-
-
-@main.route("/add", methods=['POST'])
-def create_question():
-    try:
-        body = request.get_json()
-
-        new_question = body.get('question')
-        new_answer = body.get('answer')
-        category = body.get('category')
-        difficulty = body.get('difficulty')
-        setID = body.get('id', None)
-
-        if setID:
-            question = Question(
-                question=new_question,
-                answer=new_answer,
-                category_id=category,
-                difficulty=difficulty,
-                id=setID
-            )
-        else:
-            question = Question(
-                question=new_question,
-                answer=new_answer,
-                category_id=category,
-                difficulty=difficulty
-            )
-
-        question.insert()
-
-        slctn = Question.query.order_by(Question.id).all()
-        current_slctn = paginate_results(request, slctn)
-
-        return jsonify({
-            'success': True,
-            'created': question.id,
-            'questions': current_slctn,
-            'total_questions': len(slctn)
-        })
-    except:
-        abort(405)
+#     if len(cats) == 0:
+#         abort(500)
+#     return jsonify({
+#         "success": True,
+#         "categories": cats_dict
+#     })
 
 
-@main.route("/questions/<int:question_id>")
-def get_question(question_id):
+# @api.route('/quizzes', methods=['POST'])
+# def play_quiz():
+#     body = request.get_json()
 
-    question = Question.query.get(question_id)
+#     previous_Composers_ids = body.get('previous_Composers', None)
+#     quiz_category = body.get('quiz_category', None)
+#     category = quiz_category['type']
+#     Composers = Composer.query.all()
 
-    formatted_question = question.format()
+#     if quiz_category['type'] != "All":
+#         Composers = Composer.query.filter(
+#             Composer.category_id == quiz_category['id']).all()
 
-    return jsonify({
-        'success': True,
-        'question': formatted_question
-    })
+#     if Composers:
+    #     rand_index_num = random.randrange(len(Composers))
+    # else:
+    #     return jsonify({
+    #         'success': True,
+    #         'currentComposer': None
+    #     })
+    # rtrnObj = {}
+    # current_Composer = None
 
-
-@main.route('/quizzes', methods=['POST'])
-def play_quiz():
-    body = request.get_json()
-
-    previous_questions_ids = body.get('previous_questions', None)
-    quiz_category = body.get('quiz_category', None)
-    category = quiz_category['type']
-    questions = Question.query.all()
-
-    if quiz_category['type'] != "All":
-        questions = Question.query.filter(
-            Question.category_id == quiz_category['id']).all()
-
-    if questions:
-        rand_index_num = random.randrange(len(questions))
-    else:
-        return jsonify({
-            'success': True,
-            'currentQuestion': None
-        })
-    rtrnObj = {}
-    current_question = None
-
-    if len(previous_questions_ids) > 0:
-        prevRange = []
-        while questions[rand_index_num].id in previous_questions_ids:
-            prevRange.append(rand_index_num)
-            qsAvailable = [i for i in range(
-                len(questions)) if i not in prevRange]
-            if qsAvailable:
-                rand_index_num = choice(qsAvailable)
-            else:
-                break
-        else:
-            current_question = questions[rand_index_num]
-    else:
-        current_question = questions[rand_index_num]
-    if not current_question:
-        rtrnObj = {
-            'success': True,
-            'currentQuestion': None
-        }
-    else:
-        rtrnObj = {
-            'success': True,
-            'currentQuestion': current_question.format(),
-        }
-    return jsonify(rtrnObj)
+    # if len(previous_Composers_ids) > 0:
+    #     prevRange = []
+    #     while Composers[rand_index_num].id in previous_Composers_ids:
+    #         prevRange.append(rand_index_num)
+    #         qsAvailable = [i for i in range(
+    #             len(Composers)) if i not in prevRange]
+    #         if qsAvailable:
+    #             rand_index_num = choice(qsAvailable)
+    #         else:
+    #             break
+    #     else:
+    #         current_Composer = Composers[rand_index_num]
+    # else:
+    #     current_Composer = Composers[rand_index_num]
+    # if not current_Composer:
+    #     rtrnObj = {
+    #         'success': True,
+    #         'currentComposer': None
+    #     }
+    # else:
+    #     rtrnObj = {
+    #         'success': True,
+    #         'currentComposer': current_Composer.format(),
+    #     }
+    # return jsonify(rtrnObj)
 
 
-@main.errorhandler(400)
+@api.errorhandler(400)
 def bad_request(error):
     return (
         jsonify({"success": False, "error": 400,
@@ -260,7 +296,7 @@ def bad_request(error):
     )
 
 
-@main.errorhandler(404)
+@api.errorhandler(404)
 def not_found(error):
     return (
         jsonify({"success": False, "error": 404,
@@ -269,7 +305,7 @@ def not_found(error):
     )
 
 
-@main.errorhandler(405)
+@api.errorhandler(405)
 def method_not_allowed(error):
     return (
         jsonify({"success": False, "error": 405,
@@ -278,7 +314,7 @@ def method_not_allowed(error):
     )
 
 
-@main.errorhandler(422)
+@api.errorhandler(422)
 def unproccessable_entity(error):
     return (
         jsonify({"success": False, "error": 422,
@@ -287,7 +323,7 @@ def unproccessable_entity(error):
     )
 
 
-@main.errorhandler(500)
+@api.errorhandler(500)
 def unproccessable_entity(error):
     return (
         jsonify({"success": False, "error": 500,

@@ -62,6 +62,19 @@ performer_style = db.Table('performer_style',
                                'styles.id'), primary_key=True)
                            )
 
+composer_title = db.Table('composer_title',
+                          db.Column('composer_id', db.Integer, db.ForeignKey(
+                              'composers.id'), primary_key=True),
+                          db.Column('title_id', db.Integer, db.ForeignKey(
+                              'titles.id'), primary_key=True)
+                          )
+performer_title = db.Table('performer_title',
+                           db.Column('performers_id', db.Integer, db.ForeignKey(
+                               'performers.id'), primary_key=True),
+                           db.Column('title_id', db.Integer, db.ForeignKey(
+                               'titles.id'), primary_key=True)
+                           )
+
 print("IN MODELS LINE 65")
 class Composer(db.Model):
     __tablename__ = 'composers'
@@ -71,6 +84,8 @@ class Composer(db.Model):
     years = Column(IntRangeType)
     performers = db.relationship(
         'Performer', secondary=composer_performer, back_populates='composers')
+    titles =  db.relationship(
+        "Title", secondary=performer_title, back_populates='composers')
     styles = db.relationship(
         'Style', secondary='composer_style', back_populates='composers')
     nationality = Column(String)
@@ -99,6 +114,7 @@ class Composer(db.Model):
         nationality: str,
         period_id: Optional[int] = None,
         performers: Optional[list[int]] = [],
+        titles: Optional[list[int]] = [],
         styles: Optional[list[int]] = [],
         compostitions: Optional[list[int]] = [],
         contemporaries: Optional[list[int]] = []
@@ -109,6 +125,7 @@ class Composer(db.Model):
         self.period_id = period_id
         self.performers = performers
         self.styles = styles
+        self.titles = titles
         self.compostitions = compostitions
         self.contemporaries = contemporaries
 
@@ -134,10 +151,10 @@ class Composer(db.Model):
             'performers': self.performers,
             'nationality': self.nationality,
             'styles': self.styles,
+            'titles': self.titles,
             'compostitions': self.compostitions,
             'contemporaries': [c.to_dict() for c in self.contemporaries.all()]
         }
-    print("IN CLASS LINE 140")
 
     def __repr__(self) -> str:
         return (
@@ -161,7 +178,8 @@ class Performer(db.Model):
     __tablename__ = 'performers'
     id = Column(Integer, primary_key=True)
     name = Column(String(120))
-    title = Column(String(250))
+    titles =  db.relationship(
+        "Title", secondary=performer_title, back_populates='performers')
     years = Column(IntRangeType)
     composers = db.relationship(
         'Composer', secondary=composer_performer, back_populates='performers')
@@ -171,11 +189,29 @@ class Performer(db.Model):
     recordings = db.relationship(
         'Recording', backref=db.backref('performers', lazy=True))
     rating = Column(Integer)
+    timestamp = Column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
 
     def __repr__(self):
         return f'<Performer {self.name}>'
 
 
+class Title(db.Model):
+    __tablename__ = 'titles'
+    id = Column(Integer, primary_key=True)
+    name = Column(String(250))
+    composers = db.relationship(
+        'Composer', secondary='composer_title', back_populates='titles')
+    performers = db.relationship(
+        'Performer', secondary='performer_title', back_populates='titles')
+    timestamp = Column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
+    
+    def __repr__(self):
+        return f'<Title {self.name}>'
+    
 class Style(db.Model):
     __tablename__ = 'styles'
     id = Column(Integer, primary_key=True)
@@ -184,6 +220,12 @@ class Style(db.Model):
         'Composer', secondary='composer_style', back_populates='styles')
     performers = db.relationship(
         'Performer', secondary='performer_style', back_populates='styles')
+    timestamp = Column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
+    
+    def __repr__(self):
+        return f'<Style {self.name}>'
 
 
 class Period(db.Model):
@@ -193,6 +235,9 @@ class Period(db.Model):
     years = Column(IntRangeType)
     composers = db.relationship(
         'Composer', backref=db.backref('periods', lazy=True))
+    timestamp = Column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
 
     def __repr__(self):
         return f'<Period {self.name}>'
@@ -204,6 +249,9 @@ class Composition(db.Model):
     name = Column(String(300))
     year = Column(Integer)
     composer_id = Column(Integer, ForeignKey('composers.id'))
+    timestamp = Column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
 
     def __repr__(self):
         return f'<Composition {self.name}>'
@@ -215,6 +263,9 @@ class Recording(db.Model):
     name = Column(String(300))
     year = Column(Integer)
     performer_id = Column(Integer, ForeignKey('performers.id'))
+    timestamp = Column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
 
     def __repr__(self):
         return f'<Recording {self.name}>'

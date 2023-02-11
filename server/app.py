@@ -1,9 +1,4 @@
-
-
 from flask import Flask, current_app
-
-
-
 
 def create_app(test_config=None):
     print("APP create_app()")
@@ -26,7 +21,7 @@ def create_app(test_config=None):
 
     with app.app_context():
         from api import routes
-        app.register_blueprint(routes.main)
+        app.register_blueprint(routes.api)
         return app
 
 

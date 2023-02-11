@@ -1,10 +1,10 @@
 import unittest
 import json
 from sqlalchemy import func
-from app import create_app
+from flaskr import create_app
 from flask import Flask, current_app
 from config import TestingConfig
-from models import Composer
+from flaskr.models import Composer
 
 
 class ComposerTestCase(unittest.TestCase):
@@ -76,6 +76,39 @@ class ComposerTestCase(unittest.TestCase):
         self.assertEqual(res.status_code, 200, msg='{0}'.format(res))
         self.assertEqual(data["success"], True)
         self.assertTrue(data["deleted"])
+        
+class PerformerTestCase(unittest.TestCase):
+     def setUp(self):
+        self.app = create_app(test_config=True)
+        self.client = self.app.test_client
+
+        self.new_performer = {
+            "name": "Glen Gould",
+            "years": [1932, 1982],
+            "nationality": "Canadian"
+        }
+        # with self.app.app_context():
+        #     assert current_app == self.app
+        #     self.db.create_all()
+        with self.app.app_context():
+            assert current_app == self.app
+            
+            composer = Composer(
+                name="Wolfgang Amadeus Mozart",
+                years=[1756, 1791],
+                nationality="Austria"
+            )
+
+            composer.insert()
+
+            self.del_id = Composer.query.all()[0].id
+
+    def test_create_performer(self):
+        res = self.client().post("/performers/create", json=self.new_composer)
+        data = json.loads(res.data)
+        
+        
+        
 
 
 if __name__ == "__main__":
