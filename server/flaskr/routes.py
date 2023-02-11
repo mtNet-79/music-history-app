@@ -1,7 +1,7 @@
 from flask import Flask, request, abort, jsonify
 from flask_cors import CORS
 # from flask import current_app
-from models import Question, Category
+from models import Composer
 # from flaskr import app
 from flask import Blueprint
 import random
@@ -10,18 +10,18 @@ from random import choice
 main = Blueprint('main', __name__)
 
 
-QUESTIONS_PER_PAGE = 10
+ITEMS_PER_PAGE = 10
 
 
 def paginate_results(request, selection):
     page = request.args.get("page", 1, type=int)
-    start = (page - 1) * QUESTIONS_PER_PAGE
-    end = start + QUESTIONS_PER_PAGE
+    start = (page - 1) * ITEMS_PER_PAGE
+    end = start + ITEMS_PER_PAGE
 
-    questions = [q.format() for q in selection]
-    current_questions = questions[start:end]
+    items = [i.format() for i in selection]
+    current_items = items[start:end]
 
-    return current_questions
+    return current_items
 
 
 def create_dict(arr):
@@ -34,39 +34,39 @@ def create_dict(arr):
 
 
 # IMPLEMENT CROSS-ORIGIN RESOURCE SHARING FOR ALL ORIGINS
-CORS(main, origins=["*"])
+# CORS(main, origins=["*"])
 
 
 @main.after_request
 def after_request(response):
-    response.headers.add('Access-Control-Allow-Origin', '*')
+    # response.headers.add('Access-Control-Allow-Origin', '*')
     response.headers.add('Access-Control-Allow-Headers',
                          'Content-Type,Authorization')
     response.headers.add('Access-Control-Allow-Methods',
                          'GET,PUT,POST,DELETE,OPTIONS')
     return response
 
-#----------------------------HOME PAGE ROUTES-----------------------------------------#
+# ----------------------------HOME PAGE ROUTES-----------------------------------------#
 
 
-@main.route("/questions")
-def get_questions():
-    sltcn = Question.query.order_by(Question.id).all()
+@main.route("/composers")
+def get_composers():
+    sltcn = Composer.query.order_by(Composer.id).all()
     current_slctn = paginate_results(request, sltcn)
-    cats = Category.query.all()
+    # cats = Category.query.all()
 
-    formatted_cats = [cat.format() for cat in cats]
-    cats_dict = create_dict(formatted_cats)
+    # formatted_cats = [cat.format() for cat in cats]
+    # cats_dict = create_dict(formatted_cats)
     if len(current_slctn) == 0:
         abort(404)
 
     return jsonify(
         {
             "success": True,
-            "questions": current_slctn,
-            "total_questions": len(Question.query.all()),
-            "current_category": 'all',
-            "categories": cats_dict
+            "composers": current_slctn,
+            "total_composers": len(sltcn),
+            "current_category": 'all'
+            # "categories": cats_dict
         }
     )
 
@@ -129,7 +129,7 @@ def delete_question(qid):
         'total_questions': len(slctn)
     })
 
-#----------------------ADD PAGE-------------------------------#
+# ----------------------ADD PAGE-------------------------------#
 
 
 @main.route("/categories")
@@ -165,7 +165,7 @@ def create_question():
                 difficulty=difficulty,
                 id=setID
             )
-        else:            
+        else:
             question = Question(
                 question=new_question,
                 answer=new_answer,
