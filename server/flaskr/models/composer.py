@@ -3,7 +3,7 @@ from sqlalchemy import Column, String, Integer, DateTime, ForeignKey
 from sqlalchemy_utils import IntRangeType
 from datetime import datetime
 from typing import Optional
-from . import contemporaries, composer_performer, composer_style, performer_style
+from . import contemporaries, composer_performer, composer_style, composer_title
 
 
 class Composer(db.Model):
@@ -14,6 +14,8 @@ class Composer(db.Model):
     years = Column(IntRangeType)
     performers = db.relationship(
         'Performer', secondary=composer_performer, back_populates='composers')
+    titles =  db.relationship(
+        "Title", secondary=composer_title, back_populates='composers')
     styles = db.relationship(
         'Style', secondary='composer_style', back_populates='composers')
     nationality = Column(String)
@@ -42,6 +44,7 @@ class Composer(db.Model):
         nationality: str,
         period_id: Optional[int] = None,
         performers: Optional[list[int]] = [],
+        titles: Optional[list[int]] = [],
         styles: Optional[list[int]] = [],
         compostitions: Optional[list[int]] = [],
         contemporaries: Optional[list[int]] = []
@@ -52,6 +55,7 @@ class Composer(db.Model):
         self.period_id = period_id
         self.performers = performers
         self.styles = styles
+        self.titles = titles
         self.compostitions = compostitions
         self.contemporaries = contemporaries
 
@@ -77,10 +81,10 @@ class Composer(db.Model):
             'performers': self.performers,
             'nationality': self.nationality,
             'styles': self.styles,
+            'titles': self.titles,
             'compostitions': self.compostitions,
             'contemporaries': [c.to_dict() for c in self.contemporaries.all()]
         }
-    print("IN CLASS LINE 140")
 
     def __repr__(self) -> str:
         return (

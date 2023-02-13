@@ -1,4 +1,4 @@
-from app import create_app
+from flaskr import create_app
 from models import db
 from flask import Flask, render_template
 from models import Composer

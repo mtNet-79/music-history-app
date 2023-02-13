@@ -1,6 +1,5 @@
 from flaskr import db
 from sqlalchemy import Column, String, Integer, DateTime, ForeignKey
-from sqlalchemy_utils import IntRangeType
 
 class Style(db.Model):
     __tablename__ = 'styles'

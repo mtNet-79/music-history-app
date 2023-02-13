@@ -1,3 +1,4 @@
+from .models import Composer, Performer
 from flask import Flask, request, abort, jsonify
 from flask_cors import CORS, cross_origin
 from flask import Blueprint
@@ -29,7 +30,7 @@ def create_dict(arr):
         cats_dict[k] = v
     return cats_dict
 
-from .models.composer import Composer
+
 # IMPLEMENT CROSS-ORIGIN RESOURCE SHARING FOR ALL ORIGINS
 # CORS(api, origins=["*"])
 CORS(api, resources={r"/api/*": {"origins": "*"}})
@@ -122,14 +123,37 @@ def get_Composer(composer_id):
         'success': True,
         'composer': formatted_composer
     })
+
+
+@api.route("/composers/<int:pkey_id>", methods=['DELETE'])
+def delete_composer(pkey_id):
+    composer = Composer.query.filter(Composer.id == pkey_id).one_or_none()
+    print(f"composer is {composer.id}")
     
+    if composer is None:
+        abort(404)
+
+    composer.delete()
+
+    total = Composer.query.order_by(Composer.id).all()
+    current_view = paginate_results(request, total)
+
+    return jsonify({
+        'success': True,
+        'deleted': pkey_id,
+        'composer': current_view,
+        'total_composers': len(total)
+    })
+
+
 """Performer routes"""
+
 
 @api.route("/performers")
 def get_performers():
     total = Performer.query.order_by(Performer.id).all()
     current_view = paginate_results(request, total)
-    
+
     return jsonify({
         "success": True,
         "performers": current_view,
@@ -137,46 +161,48 @@ def get_performers():
         "current_category": 'all'
     })
 
+
 @api.route("/performers/create", methods=['POST'])
 def create_performer():
     req_body = request.get_json()
     name = req_body.get("name")
     years = req_body.get("years")
     nationality = req_body.get("nationality")
-    
+
     performer = Performer(
         name=name,
         years=years,
         nationality=nationality
     )
-    
-    db.session.add(performer)
-    db.session.commit()
-    
+    performer.insert()
+#     db.session.add(performer)
+#     db.session.commit()
+
     total = Performer.query.order_by(Performer.id).all()
     current_view = paginate_results(request, total)
-    
+
     return jsonify({
         "success": True,
-        "created":performer.id,
+        "created": performer.id,
         "performers": current_view,
         "total_performers_count": len(total)
     })
-    
-    
-@api.route('/performers/<int:pkey_id>')
-def get_performer_by_id(pkey_id):
-    try:
-        performer = Performer.query.filter(Performer.id == pkey_id).one_or_none()
 
-        formatted_performer = performer.format()
 
-        return jsonify({
-            'success': True,
-            'performer': formatted_performer
-        })
-    except:
-        abort(404)
+# @api.route('/performers/<int:pkey_id>')
+# def get_performer_by_id(pkey_id):
+#     try:
+#         performer = Performer.query.filter(
+#             Performer.id == pkey_id).one_or_none()
+
+#         formatted_performer = performer.format()
+
+#         return jsonify({
+#             'success': True,
+#             'performer': formatted_performer
+#         })
+#     except:
+#         abort(404)
 
 
 # @api.route("/composers/create", methods=['POST'])
@@ -201,24 +227,24 @@ def get_performer_by_id(pkey_id):
 #         abort(500)
 
 
-@api.route("/performers/<int:pkey_id>", methods=['DELETE'])
-def delete_Composer(qid):
-    performer = Performer.query.filter(Performer.id == pkey_id).one_or_none()
-    if performer is None:
-        abort(404)
+# @api.route("/performers/<int:pkey_id>", methods=['DELETE'])
+# def delete_Composer(qid):
+#     performer = Performer.query.filter(Performer.id == pkey_id).one_or_none()
+#     if performer is None:
+#         abort(404)
 
-    db.session.delete(performer)
-    db.session.commit()
-    
-    total = Performer.query.order_by(Performer.id).all()
-    current_view = paginate_results(request, total)
+#     db.session.delete(performer)
+#     db.session.commit()
 
-    return jsonify({
-        'success': True,
-        'deleted': pkey_id,
-        'Performers': current_view,
-        'total_Performerss': len(total)
-    })
+#     total = Performer.query.order_by(Performer.id).all()
+#     current_view = paginate_results(request, total)
+
+#     return jsonify({
+#         'success': True,
+#         'deleted': pkey_id,
+#         'Performers': current_view,
+#         'total_Performerss': len(total)
+#     })
 
 # ----------------------ADD PAGE-------------------------------#
 

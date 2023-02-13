@@ -1,6 +1,7 @@
 from flaskr import db
 from sqlalchemy import Table, Column, String, Integer, UniqueConstraint, ForeignKey
-print("WAIT")
+
+
 contemporaries = db.Table('contemporaries',
                           Column('composer_id', Integer, ForeignKey(
                               'composers.id'), primary_key=True, index=True),
@@ -30,4 +31,16 @@ performer_style = db.Table('performer_style',
                                'performers.id'), primary_key=True),
                            Column('style_id', Integer, ForeignKey(
                                'styles.id'), primary_key=True)
+                           )
+composer_title = db.Table('composer_title',
+                          db.Column('composer_id', db.Integer, db.ForeignKey(
+                              'composers.id'), primary_key=True),
+                          db.Column('title_id', db.Integer, db.ForeignKey(
+                              'titles.id'), primary_key=True)
+                          )
+performer_title = db.Table('performer_title',
+                           db.Column('performers_id', db.Integer, db.ForeignKey(
+                               'performers.id'), primary_key=True),
+                           db.Column('title_id', db.Integer, db.ForeignKey(
+                               'titles.id'), primary_key=True)
                            )

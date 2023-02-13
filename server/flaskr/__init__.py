@@ -16,7 +16,7 @@ def create_app(test_config=None):
         # setup_test_db(app)
         # db.app = app
         db.init_app(app)
-
+        
         # db.app = app
         # db.init_app(app)
     else:
