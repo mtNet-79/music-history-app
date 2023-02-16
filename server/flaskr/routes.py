@@ -1,9 +1,10 @@
 from .models import Composer, Performer
-from flask import Flask, request, abort, jsonify
+from flask import Flask, request, abort, jsonify, render_template
 from flask_cors import CORS, cross_origin
 from flask import Blueprint
 import random
 from random import choice
+
 
 api = Blueprint('api', __name__)
 
@@ -129,7 +130,7 @@ def get_Composer(composer_id):
 def delete_composer(pkey_id):
     composer = Composer.query.filter(Composer.id == pkey_id).one_or_none()
     print(f"composer is {composer.id}")
-    
+
     if composer is None:
         abort(404)
 
@@ -162,17 +163,30 @@ def get_performers():
     })
 
 
+@api.route('/performers/create', methods=['GET'])
+def create_performer_form():
+    from .forms import PerformerForm
+    # form = VenueForm(genres_choices=choices)
+    form = PerformerForm()
+#   form.genres.choices = models.get_choices()
+    return render_template('forms/new_performer.html', form=form)
+
+
 @api.route("/performers/create", methods=['POST'])
 def create_performer():
     req_body = request.get_json()
+    # printf" loads json {json.loads("
+    print(f"req body {req_body} type : {type(req_body)}")
     name = req_body.get("name")
     years = req_body.get("years")
     nationality = req_body.get("nationality")
+    titles = req_body.get("titles", [])
 
     performer = Performer(
         name=name,
         years=years,
-        nationality=nationality
+        nationality=nationality,
+        titles=titles
     )
     performer.insert()
 #     db.session.add(performer)

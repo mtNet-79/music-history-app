@@ -1,16 +1,25 @@
-from flaskr import db
+from . import db
 from sqlalchemy import Table, Column, String, Integer, UniqueConstraint, ForeignKey
 
 
-contemporaries = db.Table('contemporaries',
-                          Column('composer_id', Integer, ForeignKey(
-                              'composers.id'), primary_key=True, index=True),
-                          Column('contemporary_id', Integer, ForeignKey(
-                              'composers.id'), primary_key=True, index=True),
-                          UniqueConstraint('composer_id', 'contemporary_id',
-                                           name='unique_contemporaries')
+composer_contemporaries = db.Table('composer_contemporaries',
+                                   Column('composer_id', Integer, ForeignKey(
+                                       'composers.id'), primary_key=True, index=True),
+                                   Column('contemporary_id', Integer, ForeignKey(
+                                       'composers.id'), primary_key=True, index=True),
+                                   UniqueConstraint('composer_id', 'contemporary_id',
+                                                    name='unique_composer_contemporaries')
 
-                          )
+                                   )
+performer_contemporaries = db.Table('performer_contemporaries',
+                                    Column('performer_id', Integer, ForeignKey(
+                                        'performers.id'), primary_key=True, index=True),
+                                    Column('contemporary_id', Integer, ForeignKey(
+                                        'performers.id'), primary_key=True, index=True),
+                                    UniqueConstraint('performer_id', 'contemporary_id',
+                                                     name='unique_performer_contemporaries')
+
+                                    )
 
 
 composer_performer = db.Table('composer_performer',

@@ -1,9 +1,9 @@
-from flaskr import db
+from . import db
 from sqlalchemy import Column, String, Integer, DateTime, ForeignKey
 from sqlalchemy_utils import IntRangeType
 from datetime import datetime
 from typing import Optional
-from . import contemporaries, composer_performer, composer_style, composer_title
+from . import composer_contemporaries, composer_performer, composer_style, composer_title
 
 
 class Composer(db.Model):
@@ -14,32 +14,29 @@ class Composer(db.Model):
     years = Column(IntRangeType)
     performers = db.relationship(
         'Performer', secondary=composer_performer, back_populates='composers')
-    titles =  db.relationship(
+    titles = db.relationship(
         "Title", secondary=composer_title, back_populates='composers')
     styles = db.relationship(
-        'Style', secondary='composer_style', back_populates='composers')
+        'Style', secondary=composer_style, back_populates='composers')
     nationality = Column(String)
     period_id = Column(Integer, ForeignKey('periods.id'))
     compostitions = db.relationship(
         'Composition', backref=db.backref('composer_compositions', lazy=True))
     contemporaries = db.relationship(
         'Composer',
-        secondary='contemporaries',
-        primaryjoin=(id == contemporaries.c.composer_id),
-        secondaryjoin=(id == contemporaries.c.contemporary_id),
+        secondary=composer_contemporaries,
+        primaryjoin=(id == composer_contemporaries.c.composer_id),
+        secondaryjoin=(id == composer_contemporaries.c.contemporary_id),
         backref=db.backref('contemporaries_of', lazy='dynamic'),
         lazy='dynamic'
     )
-    # contemporaries=db.relationship('Composer',
-    #                              secondary = contemporaries,
-    #                              primaryjoin = id == contemporaries.c.composer_id,
-    #                              secondaryjoin = id == contemporaries.c.contemporary_id,)
     timestamp = Column(
         DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
     )
 
     def __init__(
-        self, name: str,
+        self,
+        name: str,
         years: "IntRangeType",
         nationality: str,
         period_id: Optional[int] = None,
@@ -92,11 +89,11 @@ class Composer(db.Model):
             f"{self.name!r}, {self.years.lower!r} - {self.years.upper!r}"
             f")"
         )
-def get_composers():
-    composers = Composer.query.all()
-    all_composers: List["Composer"] = []
-    for composer in composers:
-        all_composers.append((str(composer.id), composer.name))
+# def get_composers():
+#     composers = Composer.query.all()
+#     all_composers: List["Composer"] = []
+#     for composer in composers:
+#         all_composers.append((str(composer.id), composer.name))
 
-    all_composers.sort(key=lambda x: x[1], reverse=True)
-    return all_composers
+#     all_composers.sort(key=lambda x: x[1], reverse=True)
+#     return all_composers

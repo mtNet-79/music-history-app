@@ -4,7 +4,7 @@ from sqlalchemy import func
 from flaskr import create_app, db
 from flask import Flask, current_app
 from config import TestingConfig
-from flaskr.models import Composer
+from flaskr.models import Composer, Performer
 
 
 class ComposerTestCase(unittest.TestCase):
@@ -64,7 +64,7 @@ class ComposerTestCase(unittest.TestCase):
     def test_get_composer_by_id(self):
         res = self.client().get(f"/composers/{self.del_id}")
         data = json.loads(res.data)
-        
+
         self.assertEqual(res.status_code, 200)
         self.assertEqual(data["success"], True)
 
@@ -72,7 +72,7 @@ class ComposerTestCase(unittest.TestCase):
         """ Test delete composer """
         res = self.client().delete("/composers/"+str(self.del_id))
         data = json.loads(res.data)
-        
+
         self.assertEqual(res.status_code, 200, msg='{0}'.format(res))
         self.assertEqual(data["success"], True)
         self.assertTrue(data["deleted"])
@@ -86,7 +86,8 @@ class PerformerTestCase(unittest.TestCase):
         self.new_performer = {
             "name": "Glen Gould",
             "years": [1932, 1982],
-            "nationality": "Canadian"
+            "nationality": "Canadian",
+            "rating": 4.5
         }
         # with self.app.app_context():
         #     assert current_app == self.app
@@ -94,28 +95,48 @@ class PerformerTestCase(unittest.TestCase):
         with self.app.app_context():
             assert current_app == self.app
 
-            performer = Performer(
-                name="Wolfgang Amadeus Mozart",
-                years=[1756, 1791],
-                nationality="Austria"
-            )
+            # performer = Performer(
+            #     name="Wolfgang Amadeus Mozart",
+            #     years=[1756, 1791],
+            #     nationality="Austria"
+            # )
 
-            performer.insert()
+            # performer.insert()
 
-            self.del_id = Performer.query.all()[0].id
+            # self.del_id = Performer.query.all()[0].id
 
     def tearDown(self):
-        with self.app.app_context():
-            # print(f"tear down {Composer.query.all()[0].id}")
-            if Performer.query.all()[0].id:
-                res = self.client().delete(
-                    "/performers/"+str(Performer.query.all()[0].id))
+        pass
+        # with self.app.app_context():
+        #     # print(f"tear down {Composer.query.all()[0].id}")
+        #     if Performer.query.all()[0].id:
+        #         res = self.client().delete(
+        #             "/performers/"+str(Performer.query.all()[0].id))
 
     def test_create_performer(self):
         res = self.client().post("/performers/create", json=self.new_performer)
         data = json.loads(res.data)
-        
+        print(f"TEST CREATE P data {data}")
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(data["success"], True)
+        self.assertTrue(data["created"])
+        self.assertTrue(len(data["composers"]))
 
+    def test_get_performer(self):
+        """ Test retrieve performer"""
+        res = self.client().get("/performer")
+        data = json.loads(res.data)
+        print(f"GET PERFORMER data {data}")
+        self.assertEqual(res.status_code, 200, msg='{0}'.format({res}))
+        self.assertTrue(len(data['performers']))
+
+    def test_get_composer_by_id(self):
+        res = self.client().get(f"/composers/{self.del_id}")
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(data["success"], True)
+ 
 
 if __name__ == "__main__":
     unittest.main()
