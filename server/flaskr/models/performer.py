@@ -1,9 +1,9 @@
 from . import db
 from sqlalchemy import Column, String, Integer, DateTime, ForeignKey
 from . import composer_performer, performer_style, performer_title, performer_contemporaries
-from sqlalchemy_utils import IntRangeType
+# from sqlalchemy_utils import IntRangeType
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 
 
 class Performer(db.Model):
@@ -11,7 +11,8 @@ class Performer(db.Model):
     id = Column(Integer, primary_key=True)
     name = Column(String(120))
     title = Column(String(250))
-    years = Column(IntRangeType)
+    year_born = Column(Integer)
+    year_deceased = Column(Integer)
     composers = db.relationship(
         'Composer', secondary=composer_performer, back_populates='performers')
     contemporaries = db.relationship(
@@ -37,21 +38,23 @@ class Performer(db.Model):
     def __init__(
         self,
         name: str,
-        years: "IntRangeType",
+        year_born: int,
         nationality: str,
-        composers: Optional[list[int]] = [],
-        titles: Optional[list[int]] = [],
-        styles: Optional[list[int]] = [],
-        recordings: Optional[list[int]] = [],
+        year_deceased: Optional[int] = None,        
+        composers: Optional[List[int]] = None,
+        titles: Optional[List[int]] = None,
+        styles: Optional[List[int]] = None,
+        recordings: Optional[List[int]] = None,
         rating: Optional[int] = None
     ):
         self.name = name
-        self.years = years
-        self.nationality = nationality
-        self.composers = composers
-        self.styles = styles
-        self.titles = titles
-        self.recordings = recordings
+        self.year_born = year_born
+        self.year_deceased = year_deceased
+        self.nationality = nationality 
+        self.composers = composers or []
+        self.styles = styles or []
+        self.titles = titles or []
+        self.recordings = recordings or []
         self.rating = rating
 
     def insert(self):
@@ -65,16 +68,17 @@ class Performer(db.Model):
     def delete(self):
         db.session.delete(self)
         db.session.commit()
+    
         
     def format(self):
         return {
             'id': self.id,
             'name': self.name,
-            'years': [self.years.lower, self.years.upper],
+            'years': [self.year_born, self.year_deceased],
             'composers': self.composers,
             'nationality': self.nationality,
             'styles': self.styles,
-            'titles': self.titles,
+            'titles': [t.name for t in self.titles],
             'recordings': self.recordings,
             'contemporaries': [c.to_dict() for c in self.contemporaries.all()]
         }

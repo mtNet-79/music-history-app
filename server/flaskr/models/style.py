@@ -1,6 +1,6 @@
-from . import db
+from . import db, Composer, Performer
 from sqlalchemy import Column, String, Integer, DateTime, ForeignKey
-from typing import Optional
+from typing import Optional, List
 
 class Style(db.Model):
     __tablename__ = 'styles'
@@ -14,12 +14,12 @@ class Style(db.Model):
     def __init__(
         self, 
         name: str, 
-        composers: Optional[list[int]] = [], 
-        performers: Optional[list[int]] = []
+        composers: Optional[List["Composer"]] = None, 
+        performers: Optional[List["Performer"]] = None
     ):
         self.name = name,
-        self.composers = composers,
-        self.performers = performers
+        self.composers = composers or []
+        self.performers = performers or []
         
     def insert(self):
         db.session.add(self)

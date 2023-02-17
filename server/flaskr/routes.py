@@ -1,9 +1,8 @@
 from .models import Composer, Performer
-from flask import Flask, request, abort, jsonify, render_template
+from . import db
+from flask import request, abort, jsonify, render_template
 from flask_cors import CORS, cross_origin
 from flask import Blueprint
-import random
-from random import choice
 
 
 api = Blueprint('api', __name__)
@@ -80,21 +79,24 @@ def create_composer():
     body = request.get_json()
 
     composer_name = body.get('name')
-    years = body.get('years')
+    year_born = body.get("born")
+    year_deceased = body.get("deceased", None)
     nationality = body.get('nationality')
     setID = body.get('id', None)
 
     if setID:
         composer = Composer(
             name=composer_name,
-            years=years,
+            year_born=year_born,
+            year_deceased=year_deceased,
             nationality=nationality,
             id=setID
         )
     else:
         composer = Composer(
             name=composer_name,
-            years=years,
+            year_born=year_born,
+            year_deceased=year_deceased,
             nationality=nationality
         )
 
@@ -116,7 +118,8 @@ def create_composer():
 @api.route("/composers/<int:composer_id>")
 def get_Composer(composer_id):
     # print(f"composer id {composer_id}")
-    composer = Composer.query.get(composer_id)
+    # composer = Composer.query.get(composer_id)
+    composer = db.session.get(Composer, composer_id)
 
     formatted_composer = composer.format()
 
@@ -158,7 +161,7 @@ def get_performers():
     return jsonify({
         "success": True,
         "performers": current_view,
-        "total_composers": len(total),
+        "total_performers": len(total),
         "current_category": 'all'
     })
 
@@ -178,13 +181,15 @@ def create_performer():
     # printf" loads json {json.loads("
     print(f"req body {req_body} type : {type(req_body)}")
     name = req_body.get("name")
-    years = req_body.get("years")
+    year_born = req_body.get("born")
+    year_deceased = req_body.get("deceased", None)
     nationality = req_body.get("nationality")
     titles = req_body.get("titles", [])
 
     performer = Performer(
         name=name,
-        years=years,
+        year_born=year_born,
+        year_deceased=year_deceased,
         nationality=nationality,
         titles=titles
     )
@@ -203,62 +208,38 @@ def create_performer():
     })
 
 
-# @api.route('/performers/<int:pkey_id>')
-# def get_performer_by_id(pkey_id):
-#     try:
-#         performer = Performer.query.filter(
-#             Performer.id == pkey_id).one_or_none()
+@api.route('/performers/<int:pkey_id>')
+def get_performer_by_id(pkey_id):
+    try:
+        performer = Performer.query.filter(
+            Performer.id == pkey_id).one_or_none()
 
-#         formatted_performer = performer.format()
+        formatted_performer = performer.format()
 
-#         return jsonify({
-#             'success': True,
-#             'performer': formatted_performer
-#         })
-#     except:
-#         abort(404)
+        return jsonify({
+            'success': True,
+            'performer': formatted_performer
+        })
+    except:
+        abort(404) #noqa
+        
+@api.route("/performers/<int:pkey_id>", methods=['DELETE'])
+def delete_performer(pkey_id):
+    performer = Performer.query.filter(Performer.id == pkey_id).one_or_none()
+    if performer is None:
+        abort(404)
 
+    performer.delete()
 
-# @api.route("/composers/create", methods=['POST'])
-# def search_Composer_by_term():
-#     body = request.get_json()
+    total = Performer.query.order_by(Performer.id).all()
+    current_view = paginate_results(request, total)
 
-#     search_term = body.get('searchTerm', None)
-
-#     try:
-#         Composers = Composer.query.filter(
-#             Composer.Composer.like(f"%{search_term}%")).all()
-
-#         pagedQueryRes = paginate_results(request, Composers)
-
-#         return jsonify({
-#             'success': True,
-#             'Composers': pagedQueryRes,
-#             'totalComposers': len(Composers)
-#         })
-
-#     except:
-#         abort(500)
-
-
-# @api.route("/performers/<int:pkey_id>", methods=['DELETE'])
-# def delete_Composer(qid):
-#     performer = Performer.query.filter(Performer.id == pkey_id).one_or_none()
-#     if performer is None:
-#         abort(404)
-
-#     db.session.delete(performer)
-#     db.session.commit()
-
-#     total = Performer.query.order_by(Performer.id).all()
-#     current_view = paginate_results(request, total)
-
-#     return jsonify({
-#         'success': True,
-#         'deleted': pkey_id,
-#         'Performers': current_view,
-#         'total_Performerss': len(total)
-#     })
+    return jsonify({
+        'success': True,
+        'deleted': pkey_id,
+        'current_performers': current_view,
+        'total_Performerss': len(total)
+    })
 
 # ----------------------ADD PAGE-------------------------------#
 
@@ -362,11 +343,3 @@ def unproccessable_entity(error):
         422,
     )
 
-
-@api.errorhandler(500)
-def unproccessable_entity(error):
-    return (
-        jsonify({"success": False, "error": 500,
-                "message": "server error"}),
-        422,
-    )

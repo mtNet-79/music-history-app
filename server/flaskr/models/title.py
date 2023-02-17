@@ -1,6 +1,6 @@
-from . import db
+from . import db, Composer, Performer
 from sqlalchemy import Column, String, Integer, DateTime, ForeignKey
-from typing import Optional
+from typing import Optional, List
 
 
 class Title(db.Model):
@@ -15,13 +15,23 @@ class Title(db.Model):
     def __init__(
         self, 
         name: str, 
-        composers: Optional[list[int]] = [], 
-        performers: Optional[list[int]] = []
+        composers: Optional[List["Composer"]] = None, 
+        performers: Optional[List["Performer"]] = None
     ):
-        self.name = name,
-        self.composers = composers,
-        self.performers = performers
+        self.name = name
+        self.composers = composers or []
+        self.performers = performers or []
         
+    def insert(self):
+        db.session.add(self)
+        db.session.commit()
+
+    def update(self):
+        db.session.commit()
+
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
         
     def __repr__(self):
         return f'<Title {self.name}>'

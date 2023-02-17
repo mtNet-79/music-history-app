@@ -15,11 +15,13 @@ class Recording(db.Model):
         self, 
         name: str, 
         years: int, 
-        performer_id: int
+        performer_id: int,
+        composer_id: int
     ):
-        self.name = name,
-        self.years = years,
+        self.name = name
+        self.years = years
         self.performer_id = performer_id
+        self.composer_id = composer_id
         
     def insert(self):
         db.session.add(self)

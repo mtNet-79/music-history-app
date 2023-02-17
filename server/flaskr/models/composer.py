@@ -1,8 +1,8 @@
 from . import db
 from sqlalchemy import Column, String, Integer, DateTime, ForeignKey
-from sqlalchemy_utils import IntRangeType
+# from sqlalchemy_utils import IntRangeType
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 from . import composer_contemporaries, composer_performer, composer_style, composer_title
 
 
@@ -11,7 +11,8 @@ class Composer(db.Model):
     # Autoincrementing, unique primary key
     id = Column(Integer, primary_key=True)
     name = Column(db.String(120))
-    years = Column(IntRangeType)
+    year_born = Column(Integer)
+    year_deceased = Column(Integer)
     performers = db.relationship(
         'Performer', secondary=composer_performer, back_populates='composers')
     titles = db.relationship(
@@ -37,24 +38,26 @@ class Composer(db.Model):
     def __init__(
         self,
         name: str,
-        years: "IntRangeType",
+        year_born: int,
         nationality: str,
+        year_deceased: Optional[int] = None, 
         period_id: Optional[int] = None,
-        performers: Optional[list[int]] = [],
-        titles: Optional[list[int]] = [],
-        styles: Optional[list[int]] = [],
-        compostitions: Optional[list[int]] = [],
-        contemporaries: Optional[list[int]] = []
+        performers: Optional[List[int]] = None,
+        titles: Optional[List[int]] = None,
+        styles: Optional[List[int]] = None,
+        compostitions: Optional[List[int]] = None,
+        contemporaries: Optional[List[int]] = None
     ):
         self.name = name
-        self.years = years
+        self.year_born = year_born
+        self.year_deceased = year_deceased
         self.nationality = nationality
         self.period_id = period_id
-        self.performers = performers
-        self.styles = styles
-        self.titles = titles
-        self.compostitions = compostitions
-        self.contemporaries = contemporaries
+        self.performers = performers or []
+        self.styles = styles or []
+        self.titles = titles or []
+        self.compostitions = compostitions or []
+        self.contemporaries = contemporaries or []
 
     def insert(self):
         db.session.add(self)
@@ -73,7 +76,7 @@ class Composer(db.Model):
         return {
             'id': self.id,
             'name': self.name,
-            'years': [self.years.lower, self.years.upper],
+            'years': [self.year_born, self.year_deceased],
             'period_id': self.period_id,
             'performers': self.performers,
             'nationality': self.nationality,
@@ -86,7 +89,7 @@ class Composer(db.Model):
     def __repr__(self) -> str:
         return (
             f"{self.__class__.__name__}("
-            f"{self.name!r}, {self.years.lower!r} - {self.years.upper!r}"
+            f"{self.name!r}, {self.year_born!r} - {self.year_deceased!r}"
             f")"
         )
 # def get_composers():

@@ -1,8 +1,8 @@
 from . import db
 from sqlalchemy import Column, String, Integer, DateTime, ForeignKey
 from sqlalchemy_utils import IntRangeType
-from typing import Optional
-# from .composer import Composer
+from typing import Optional, List
+from .composer import Composer
 
 
 class Period(db.Model):
@@ -17,11 +17,11 @@ class Period(db.Model):
         self, 
         name: str, 
         years: int, 
-        composers: Optional[list] = []
+        composers: Optional[List["Composer"]] = None
     ):
-        self.name = name,
-        self.years = years,
-        self.composers = composers
+        self.name = name
+        self.years = years
+        self.composers = composers or []
         
     def insert(self):
         db.session.add(self)
