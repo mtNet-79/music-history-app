@@ -1,28 +1,28 @@
 from . import db
 from sqlalchemy import Column, String, Integer, DateTime, ForeignKey
-# from sqlalchemy_utils import IntRangeType
 from datetime import datetime
-from typing import Optional, List
-from . import composer_contemporaries, composer_performer, composer_style, composer_title
+from typing import Optional, List, Any
+from . import (composer_contemporaries, composer_performer,
+               composer_style, composer_title)
 
 
-class Composer(db.Model):
+class Composer(db.Model):  # type: ignore
     __tablename__ = 'composers'
     # Autoincrementing, unique primary key
-    id = Column(Integer, primary_key=True)
-    name = Column(db.String(120))
-    year_born = Column(Integer)
-    year_deceased = Column(Integer)
+    id = Column(Integer, primary_key=True)  # type: ignore
+    name = Column(String(120))  # type: ignore
+    year_born = Column(Integer)  # type: ignore
+    year_deceased = Column(Integer)  # type: ignore
     performers = db.relationship(
-        'Performer', secondary=composer_performer, back_populates='composers')
+        'Performer', secondary=composer_performer, back_populates='composers')  # type: ignore
     titles = db.relationship(
-        "Title", secondary=composer_title, back_populates='composers')
+        "Title", secondary=composer_title, back_populates='composers')  # type: ignore
     styles = db.relationship(
-        'Style', secondary=composer_style, back_populates='composers')
-    nationality = Column(String)
-    period_id = Column(Integer, ForeignKey('periods.id'))
+        'Style', secondary=composer_style, back_populates='composers')  # type: ignore
+    nationality = Column(String)  # type: ignore
+    period_id = Column(Integer, ForeignKey('periods.id'))  # type: ignore
     compostitions = db.relationship(
-        'Composition', backref=db.backref('composer_compositions', lazy=True))
+        'Composition', backref=db.backref('composer_compositions', lazy=True))  # type: ignore
     contemporaries = db.relationship(
         'Composer',
         secondary=composer_contemporaries,
@@ -30,24 +30,24 @@ class Composer(db.Model):
         secondaryjoin=(id == composer_contemporaries.c.contemporary_id),
         backref=db.backref('contemporaries_of', lazy='dynamic'),
         lazy='dynamic'
-    )
+    )  # type: ignore
     timestamp = Column(
         DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
+    )  # type: ignore
 
     def __init__(
         self,
         name: str,
         year_born: int,
         nationality: str,
-        year_deceased: Optional[int] = None, 
+        year_deceased: Optional[int] = None,
         period_id: Optional[int] = None,
         performers: Optional[List[int]] = None,
         titles: Optional[List[int]] = None,
         styles: Optional[List[int]] = None,
         compostitions: Optional[List[int]] = None,
         contemporaries: Optional[List[int]] = None
-    ):
+    ) -> None:
         self.name = name
         self.year_born = year_born
         self.year_deceased = year_deceased
@@ -59,20 +59,20 @@ class Composer(db.Model):
         self.compostitions = compostitions or []
         self.contemporaries = contemporaries or []
 
-    def insert(self):
+    def insert(self) -> None:
         db.session.add(self)
         db.session.commit()
 
-    def update(self):
+    def update(self) -> None:
         db.session.commit()
 
-    def delete(self):
+    def delete(self) -> None:
         db.session.delete(self)
         db.session.commit()
 
     # period = Period.query.get(period_id)
 
-    def format(self):
+    def format(self) -> dict:
         return {
             'id': self.id,
             'name': self.name,

@@ -1,3 +1,4 @@
+# flake8: noqa
 from flaskr import db
 
 from .tables import (
