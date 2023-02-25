@@ -1,7 +1,5 @@
 from flaskr import create_app
-from models import db
-from flask import Flask, render_template
-from models import Composer
+from flaskr.models import db
 
 app = create_app()
 

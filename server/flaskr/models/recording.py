@@ -3,7 +3,7 @@ from sqlalchemy import Column, String, Integer, DateTime, ForeignKey
 # from .performer import Performer
 
 
-class Recording(db.Model):
+class Recording(db.Model): # type: ignore
     __tablename__ = 'recordings'
     id = Column(Integer, primary_key=True)
     name = Column(String(300))
@@ -13,10 +13,10 @@ class Recording(db.Model):
     
     def __init__(
         self, 
-        name: str, 
-        years: int, 
-        performer_id: int,
-        composer_id: int
+        name: Column[str], 
+        years: Column[int], 
+        performer_id: Column[int],
+        composer_id: Column[int]
     ):
         self.name = name
         self.years = years

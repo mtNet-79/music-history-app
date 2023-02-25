@@ -9,12 +9,12 @@ migrate = Migrate()
 
 def create_app(test_config: Optional[str] = None) -> Flask:
     # create and configure the app
-    app = Flask(__name__)
+    app = Flask(__name__, template_folder='templates')
     if test_config:
         app.config.from_object('config.TestingConfig')
         db.init_app(app)
     else:
-        app.config.from_object('config.Config')
+        app.config.from_object('config.DevelopmentConfig')
         db.init_app(app)
         migrate.init_app(app, db, compare_type=True)
 

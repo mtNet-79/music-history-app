@@ -2,8 +2,10 @@ import pytest
 import json
 from flask import Flask, current_app
 from flaskr import create_app, db
+from flask_wtf.csrf import generate_csrf
 from config import TestingConfig
 from flaskr.models import Composer, Performer, Title
+from flaskr.forms import ComposerForm
 
 
 @pytest.fixture(scope="module")
@@ -27,19 +29,49 @@ class TestComposer:
         "year_deceased": 1750,
         "nationality": "Germany"
     }
+    
+    
+    def test_show_form(client):
+        response = client.get('/composers/create')
+
+        assert response.status_code == 200
+        assert b'Add Composer' in response.data
 
     def test_create_composer(self, test_client):
         """Test add new composer"""
-        res = test_client.post("/composers/create", json=self.new_composer)
-        data = json.loads(res.data)
+        # res = test_client.post("/composers/create", json=self.new_composer)
+        # data = json.loads(res.data)
+        form = ComposerForm()
+        form.name.data = 'Mozart'
+        form.born.data = '1756-01-27'
+        form.deceased.data = '1791-12-05'
+        form.nationality.data = 'Austrian'
+        # use Flask-WTF to generate a CSRF token for the form
+        csrf_token = generate_csrf()
+        response = test_client.post('/composers/create', data={
+            'csrf_token': csrf_token,
+            **form.data  # use the form data dictionary to populate the request data
+        })
         
         # print(f"ON CREATE COMPOSER DATA is {data}")
 
-        assert res.status_code == 200
-        assert data["success"] == True
-        assert data["created"]
-        assert len(data["composers"]) > 0
+        # assert res.status_code == 200
+        # assert data["success"] == True
+        # assert data["created"]
+        # assert len(data["composers"]) > 0
+        assert response.status_code == 200
+        assert json.loads(response.data)['success'] is True
+        assert json.loads(response.data)['created'] is not None
+        assert json.loads(response.data)['composers'] is not None
+        assert json.loads(response.data)['total_Composers'] is not None
+        
+    def test_create_composer_failure(client):
+        """Add Composer Fail"""
+        response = client.post('/composers/create', data={})
 
+        assert response.status_code == 400
+        assert json.loads(response.data)['success'] is False
+        
     def test_get_composer(self, test_client):
         """Test retrieve composer"""
         res = test_client.get("/composers")
@@ -64,6 +96,7 @@ class TestComposer:
         assert res.status_code == 200
         assert data["success"] == True
 
+
     def test_delete_composer(self, test_client):
         """Test delete composer by id"""
         composer = Composer(
@@ -82,7 +115,7 @@ class TestComposer:
         assert data["success"] == True
         assert data["deleted"] == composer.id
 
-
+    
 class TestPerformer:
     new_performer = {
         "name": "Glen Gould",

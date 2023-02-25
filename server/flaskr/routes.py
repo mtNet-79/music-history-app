@@ -1,29 +1,34 @@
 from .models import Composer, Performer
 from . import db
 from flask import request, abort, jsonify, render_template
-from flask_cors import CORS, cross_origin
+from flask_cors import CORS, cross_origin  # type: ignore
 from flask import Blueprint
+from .forms import ComposerForm
+from typing import List, Optional, Dict, Any, Union
 
 
-api = Blueprint('api', __name__)
+api = Blueprint('api', __name__)  # type: ignore
 
 
-ITEMS_PER_PAGE = 10
+ITEMS_PER_PAGE: int = 10
 
 
-def paginate_results(request, selection):
-    page = request.args.get("page", 1, type=int)
-    start = (page - 1) * ITEMS_PER_PAGE
-    end = start + ITEMS_PER_PAGE
+def paginate_results(
+    request, # type: ignore
+    selection: List[Union[Composer, Performer]]
+) -> List[dict]:
+    page: int = request.args.get("page", 1, type=int)
+    start: int = (page - 1) * ITEMS_PER_PAGE
+    end: int = start + ITEMS_PER_PAGE
 
-    items = [i.format() for i in selection]
-    current_items = items[start:end]
+    items: list = [i.format() for i in selection]
+    current_items: list = items[start:end]
 
     return current_items
 
 
-def create_dict(arr):
-    cats_dict = {}
+def create_dict(arr: List[Dict[str, Any]]) -> dict:
+    cats_dict: Dict[Any, Any] = {}
     for x in arr:
         k = list(x.items())[0][1]
         v = list(x.items())[1][1]
@@ -37,20 +42,34 @@ CORS(api, resources={r"/api/*": {"origins": "*"}})
 
 
 @api.after_request
-def after_request(response):
+def after_request(response):  # type: ignore
     # response.headers.add('Access-Control-Allow-Origin', '*')
     response.headers.add('Access-Control-Allow-Headers',
                          'Content-Type,Authorization')
     response.headers.add('Access-Control-Allow-Methods',
                          'GET,PUT,POST,DELETE,OPTIONS')
-    return response
+    return response  # type: ignore
 
 # ----------------------------HOME PAGE ROUTES-----------------------------------------#
 
 
+@api.route("/")
+def index() -> str:
+    c_sltcn: List[Composer] = Composer.query.order_by(Composer.id).all()
+    p_sltcn: List[Performer] = Performer.query.order_by(Performer.id).all()
+    curr_composers_list: List[Dict[str, Any]
+                              ] = paginate_results(request, c_sltcn)
+    curr_performers_list: List[Dict[str, Any]
+                               ] = paginate_results(request, p_sltcn)
+    data: Dict[str, List[Dict[str, Any]]] = {"composers": curr_composers_list,
+                                             "performers": curr_performers_list}
+
+    return render_template("index.jinja-html", data=data)
+
+
 @api.route("/composers")
 @cross_origin()
-def get_composers():
+def get_composers() -> str:
     sltcn = Composer.query.order_by(Composer.id).all()
     print(f"get slctn {sltcn}")
     current_slctn = paginate_results(request, sltcn)
@@ -62,55 +81,72 @@ def get_composers():
     if len(current_slctn) == 0:
         abort(404)
 
-    return jsonify(
-        {
-            "success": True,
-            "composers": current_slctn,
-            "total_composers": len(sltcn),
-            "current_category": 'all'
-            # "categories": cats_dict
-        }
-    )
+    return render_template("composers.jinja-html", composers=current_slctn)
+
+    # return jsonify(
+    #     {
+    #         "success": True,
+    #         "composers": current_slctn,
+    #         "total_composers": len(sltcn),
+    #         "current_category": 'all'
+    #         # "categories": cats_dict
+    #     }
+    # )
+
+
+@api.route("/composers/create")
+def show_form() -> str:
+    form = ComposerForm()  # type: ignore
+    return render_template('add_composer.jinja-html', form=form)
+
+@api.route("/admin/title")
+def show_form() -> str:
+    form = TitleForm()  # type: ignore
+    return render_template('add_title.jinja-html', form=form)
 
 
 @api.route("/composers/create", methods=['POST'])
 def create_composer():
     # try:
-    body = request.get_json()
+    print("HERE")
+    form = ComposerForm()
+    print(f"what in the form {form.validate()}")
+    for property, value in vars(form.meta).items():
+        print(property, ":", value)
+    if form.validate():
+        composer_name = form.name.data
+        year_born = form.born.data
+        year_deceased = form.deceased.data
+        nationality = form.nationality.data
 
-    composer_name = body.get('name')
-    year_born = body.get("born")
-    year_deceased = body.get("deceased", None)
-    nationality = body.get('nationality')
-    setID = body.get('id', None)
-
-    if setID:
-        composer = Composer(
-            name=composer_name,
-            year_born=year_born,
-            year_deceased=year_deceased,
-            nationality=nationality,
-            id=setID
-        )
     else:
-        composer = Composer(
-            name=composer_name,
-            year_born=year_born,
-            year_deceased=year_deceased,
-            nationality=nationality
-        )
+        print("TEST FAIL")
+        return abort(400)
+
+    composer = Composer(name=composer_name, year_born=year_born,
+                        year_deceased=year_deceased, nationality=nationality)
 
     composer.insert()
 
     slctn = Composer.query.order_by(Composer.id).all()
     current_slctn = paginate_results(request, slctn)
-
-    return jsonify({
+    data = {
         'success': True,
         'created': composer.id,
         'composers': current_slctn,
         'total_Composers': len(slctn)
-    })
+        
+    }
+    
+    
+    render_template("composers.jinja-html", data=data)
+
+    # return jsonify({
+    #     'success': True,
+    #     'created': composer.id,
+    #     'composers': current_slctn,
+    #     'total_Composers': len(slctn)
+    # })  # type: ignore
     # except:
     #     abort(405)
 
@@ -126,7 +162,7 @@ def get_Composer(composer_id):
     return jsonify({
         'success': True,
         'composer': formatted_composer
-    })
+    })  # type: ignore
 
 
 @api.route("/composers/<int:pkey_id>", methods=['DELETE'])
@@ -147,7 +183,7 @@ def delete_composer(pkey_id):
         'deleted': pkey_id,
         'composer': current_view,
         'total_composers': len(total)
-    })
+    })  # type: ignore
 
 
 """Performer routes"""
@@ -163,7 +199,7 @@ def get_performers():
         "performers": current_view,
         "total_performers": len(total),
         "current_category": 'all'
-    })
+    })  # type: ignore
 
 
 @api.route('/performers/create', methods=['GET'])
@@ -172,6 +208,7 @@ def create_performer_form():
     # form = VenueForm(genres_choices=choices)
     form = PerformerForm()
 #   form.genres.choices = models.get_choices()
+    # type: ignore
     return render_template('forms/new_performer.html', form=form)
 
 
@@ -204,7 +241,7 @@ def create_performer():
         "success": True,
         "created": performer.id,
         "performers": current_view,
-        "total_performers_count": len(total)
+        "total_performers_count": len(total)  # type: ignore
     })
 
 
@@ -219,15 +256,16 @@ def get_performer_by_id(pkey_id):
         return jsonify({
             'success': True,
             'performer': formatted_performer
-        })
+        })  # type: ignore
     except:
-        abort(404) #noqa
-        
+        abort(404)  # type: ignore
+
+
 @api.route("/performers/<int:pkey_id>", methods=['DELETE'])
 def delete_performer(pkey_id):
     performer = Performer.query.filter(Performer.id == pkey_id).one_or_none()
     if performer is None:
-        abort(404)
+        abort(404)  # type: ignore
 
     performer.delete()
 
@@ -239,7 +277,7 @@ def delete_performer(pkey_id):
         'deleted': pkey_id,
         'current_performers': current_view,
         'total_Performerss': len(total)
-    })
+    })  # type: ignore
 
 # ----------------------ADD PAGE-------------------------------#
 
@@ -314,7 +352,7 @@ def bad_request(error):
         jsonify({"success": False, "error": 400,
                 "message": "Bad request"}),
         400,
-    )
+    )  # type: ignore
 
 
 @api.errorhandler(404)
@@ -323,7 +361,7 @@ def not_found(error):
         jsonify({"success": False, "error": 404,
                 "message": "resource not found"}),
         404,
-    )
+    )  # type: ignore
 
 
 @api.errorhandler(405)
@@ -332,7 +370,7 @@ def method_not_allowed(error):
         jsonify({"success": False, "error": 405,
                 "message": "method not allowed"}),
         405,
-    )
+    )  # type: ignore
 
 
 @api.errorhandler(422)
@@ -341,5 +379,4 @@ def unproccessable_entity(error):
         jsonify({"success": False, "error": 422,
                 "message": "unproccessable entity"}),
         422,
-    )
-
+    )  # type: ignore

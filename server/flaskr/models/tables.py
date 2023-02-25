@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 from . import db
 from sqlalchemy import Table, Column, String, Integer, UniqueConstraint, ForeignKey
 

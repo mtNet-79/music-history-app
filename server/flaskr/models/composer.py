@@ -1,7 +1,9 @@
+from __future__ import annotations
 from . import db
-from sqlalchemy import Column, String, Integer, DateTime, ForeignKey
-from datetime import datetime
+from sqlalchemy import Column, String, Integer, DateTime, Date, ForeignKey
+from datetime import datetime, date
 from typing import Optional, List, Any
+
 from . import (composer_contemporaries, composer_performer,
                composer_style, composer_title)
 
@@ -11,8 +13,8 @@ class Composer(db.Model):  # type: ignore
     # Autoincrementing, unique primary key
     id = Column(Integer, primary_key=True)  # type: ignore
     name = Column(String(120))  # type: ignore
-    year_born = Column(Integer)  # type: ignore
-    year_deceased = Column(Integer)  # type: ignore
+    year_born = Column(Date)  # type: ignore
+    year_deceased = Column(Date)  # type: ignore
     performers = db.relationship(
         'Performer', secondary=composer_performer, back_populates='composers')  # type: ignore
     titles = db.relationship(
@@ -37,27 +39,27 @@ class Composer(db.Model):  # type: ignore
 
     def __init__(
         self,
-        name: str,
-        year_born: int,
-        nationality: str,
-        year_deceased: Optional[int] = None,
-        period_id: Optional[int] = None,
-        performers: Optional[List[int]] = None,
-        titles: Optional[List[int]] = None,
-        styles: Optional[List[int]] = None,
-        compostitions: Optional[List[int]] = None,
-        contemporaries: Optional[List[int]] = None
+        name: Column[str],
+        year_born: Column[date],
+        nationality: Column[str],
+        year_deceased: Column[date],
+        period_id: Column[Optional[int]] = None,  # type: ignore
+        performers: Column[Optional[List[int]]] = None,  # type: ignore
+        titles: Column[Optional[list[object]]] = None,  # type: ignore
+        styles: Column[Optional[list[object]]] = None,  # type: ignore
+        compostitions: Column[Optional[list[object]]] = None,  # type: ignore
+        contemporaries: Column[Optional[List[object]]] = None  # type: ignore
     ) -> None:
         self.name = name
         self.year_born = year_born
         self.year_deceased = year_deceased
         self.nationality = nationality
         self.period_id = period_id
-        self.performers = performers or []
-        self.styles = styles or []
-        self.titles = titles or []
-        self.compostitions = compostitions or []
-        self.contemporaries = contemporaries or []
+        self.performers = performers or [] # type: ignore
+        self.styles = styles or [] # type: ignore
+        self.titles = titles or [] # type: ignore
+        self.compostitions = compostitions or [] # type: ignore
+        self.contemporaries = contemporaries or [] # type: ignore
 
     def insert(self) -> None:
         db.session.add(self)
