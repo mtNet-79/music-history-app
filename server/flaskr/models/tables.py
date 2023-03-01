@@ -54,3 +54,30 @@ performer_title = db.Table('performer_title',
                            db.Column('title_id', db.Integer, db.ForeignKey(
                                'titles.id'), primary_key=True)
                            )
+composer_favorites = db.Table('composer_favorites',
+    db.Column('user_id', db.Integer, db.ForeignKey('users.id'), primary_key=True),
+    db.Column('composer_id', db.Integer, db.ForeignKey('composers.id'), primary_key=True)
+)
+
+performer_favorites = db.Table('performer_favorites',
+    db.Column('user_id', db.Integer, db.ForeignKey('users.id'), primary_key=True),
+    db.Column('performer_id', db.Integer, db.ForeignKey('performers.id'), primary_key=True)
+)
+
+composer_nationalities = db.Table('composer_nationalities',
+                                  db.Column('composer_id', Integer, db.ForeignKey(
+                                      'composers.id'), primary_key=True),
+                                  db.Column('nation_id', Integer, db.ForeignKey(
+                                      'nations.id'), primary_key=True),
+                                  db.UniqueConstraint('composer_id', 'nation_id',
+                                                   name='unique_composer_nationalities')
+                                  )
+
+performer_nationalities = db.Table('performer_nationalities',
+                                   db.Column('performer_id', Integer, db.ForeignKey(
+                                       'performers.id'), primary_key=True),
+                                  db. Column('nation_id', Integer, db.ForeignKey(
+                                       'nations.id'), primary_key=True),
+                                   db.UniqueConstraint('performer_id', 'nation_id',
+                                                    name='unique_performer_nationalities')
+                                   )

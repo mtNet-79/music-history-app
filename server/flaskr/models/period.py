@@ -1,26 +1,27 @@
 from . import db
 from sqlalchemy import Column, String, Integer, DateTime, ForeignKey
-from sqlalchemy_utils import IntRangeType # type: ignore
+from sqlalchemy_utils import IntRangeType  # type: ignore
 from typing import Optional, List
 from .composer import Composer
 
 
-class Period(db.Model): # type: ignore
+class Period(db.Model):  # type: ignore
     __tablename__ = 'periods'
-    id = Column(Integer, primary_key=True) # type: ignore
-    name = Column(String(120)) # type: ignore
-    years = Column(IntRangeType) # type: ignore
+    id = Column(Integer, primary_key=True)  # type: ignore
+    name = Column(String(120))  # type: ignore
+    # years = Column(IntRangeType) # type: ignore
+    dates = Column(String(25))
     composers = db.relationship(
-        'Composer', backref=db.backref('periods', lazy=True)) # type: ignore
+        'Composer', backref=db.backref('periods', lazy=True))  # type: ignore
 
     def __init__(
         self,
-        name: Column[str],
-        years: Column[int],
-        composers: Optional[List["Composer"]] = None # type: ignore
+        name: str,
+        dates: str,
+        composers: Optional[List["Composer"]] = None
     ):
         self.name = name
-        self.years = years
+        self.dates = dates
         self.composers = composers or [] # type: ignore
 
     def insert(self):

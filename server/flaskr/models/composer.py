@@ -3,25 +3,45 @@ from . import db
 from sqlalchemy import Column, String, Integer, DateTime, Date, ForeignKey
 from datetime import datetime, date
 from typing import Optional, List, Any
-
 from . import (composer_contemporaries, composer_performer,
-               composer_style, composer_title)
+               composer_style, composer_title, composer_nationalities)
+
+
 
 
 class Composer(db.Model):  # type: ignore
+    """
+    A class representing a music composer, which is a subclass of db.Model.
+
+    Attributes:
+        id (int): The primary key of the composer.
+        name (str): The name of the composer.
+        bio (str): The biography of the composer.
+        image (bytes): The image of the composer.
+        performers (list): The list of performers associated with the composer.
+        titles (list): The list of titles associated with the composer.
+        styles (list): The list of styles associated with the composer.
+        recordings (list): The list of recordings associated with the composer.
+        rating (int): The rating of the composer.
+        timestamp (datetime): The timestamp when the composer was last updated.
+    """ 
     __tablename__ = 'composers'
-    # Autoincrementing, unique primary key
+
     id = Column(Integer, primary_key=True)  # type: ignore
     name = Column(String(120))  # type: ignore
     year_born = Column(Date)  # type: ignore
     year_deceased = Column(Date)  # type: ignore
+    bio = Column(String(1000))
+    image = Column(db.LargeBinary) 
     performers = db.relationship(
         'Performer', secondary=composer_performer, back_populates='composers')  # type: ignore
     titles = db.relationship(
         "Title", secondary=composer_title, back_populates='composers')  # type: ignore
     styles = db.relationship(
         'Style', secondary=composer_style, back_populates='composers')  # type: ignore
-    nationality = Column(String)  # type: ignore
+     # Define a many-to-many relationship with the Nation model
+    nationalities = db.relationship('Nation', secondary=composer_nationalities, 
+                                    back_populates='composers') # type: ignore
     period_id = Column(Integer, ForeignKey('periods.id'))  # type: ignore
     compostitions = db.relationship(
         'Composition', backref=db.backref('composer_compositions', lazy=True))  # type: ignore
@@ -41,19 +61,23 @@ class Composer(db.Model):  # type: ignore
         self,
         name: Column[str],
         year_born: Column[date],
-        nationality: Column[str],
+        nationalities: Column[List[Any]],
         year_deceased: Column[date],
+        bio: Optional[str],
+        image: Optional[bytes],
         period_id: Column[Optional[int]] = None,  # type: ignore
         performers: Column[Optional[List[int]]] = None,  # type: ignore
-        titles: Column[Optional[list[object]]] = None,  # type: ignore
-        styles: Column[Optional[list[object]]] = None,  # type: ignore
-        compostitions: Column[Optional[list[object]]] = None,  # type: ignore
-        contemporaries: Column[Optional[List[object]]] = None  # type: ignore
+        titles: Column[Optional[list[Any]]] = None,  # type: ignore
+        styles: Column[Optional[list[Any]]] = None,  # type: ignore
+        compostitions: Column[Optional[list[Any]]] = None,  # type: ignore
+        contemporaries: Column[Optional[List[Any]]] = None  # type: ignore
     ) -> None:
         self.name = name
         self.year_born = year_born
         self.year_deceased = year_deceased
-        self.nationality = nationality
+        self.bio = bio
+        self.image = image
+        self.nationalities = nationalities
         self.period_id = period_id
         self.performers = performers or [] # type: ignore
         self.styles = styles or [] # type: ignore
@@ -79,9 +103,11 @@ class Composer(db.Model):  # type: ignore
             'id': self.id,
             'name': self.name,
             'years': [self.year_born, self.year_deceased],
+            'bio': self.bio,
+            'image': self.image,
             'period_id': self.period_id,
             'performers': self.performers,
-            'nationality': self.nationality,
+            'nationalities': self.nationalities,
             'styles': self.styles,
             'titles': self.titles,
             'compostitions': self.compostitions,

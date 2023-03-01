@@ -3,7 +3,7 @@ from . import db
 from flask import request, abort, jsonify, render_template
 from flask_cors import CORS, cross_origin  # type: ignore
 from flask import Blueprint
-from .forms import ComposerForm
+# from .forms import ComposerForm
 from typing import List, Optional, Dict, Any, Union
 
 
@@ -14,7 +14,7 @@ ITEMS_PER_PAGE: int = 10
 
 
 def paginate_results(
-    request, # type: ignore
+    request,  # type: ignore
     selection: List[Union[Composer, Performer]]
 ) -> List[dict]:
     page: int = request.args.get("page", 1, type=int)
@@ -81,74 +81,69 @@ def get_composers() -> str:
     if len(current_slctn) == 0:
         abort(404)
 
-    return render_template("composers.jinja-html", composers=current_slctn)
+    # return render_template("composers.jinja-html", composers=current_slctn)
 
-    # return jsonify(
-    #     {
-    #         "success": True,
-    #         "composers": current_slctn,
-    #         "total_composers": len(sltcn),
-    #         "current_category": 'all'
-    #         # "categories": cats_dict
-    #     }
-    # )
+    return jsonify(
+        {
+            "success": True,
+            "composers": current_slctn,
+            "total_composers": len(sltcn),
+            "current_category": 'all'
+            # "categories": cats_dict
+        }
+    )
 
 
-@api.route("/composers/create")
-def show_form() -> str:
-    form = ComposerForm()  # type: ignore
-    return render_template('add_composer.jinja-html', form=form)
+# @api.route("/composers/create")
+# def show_form() -> str:
+#     form = ComposerForm()  # type: ignore
+#     return render_template('add_composer.jinja-html', form=form)
 
-@api.route("/admin/title")
-def show_form() -> str:
-    form = TitleForm()  # type: ignore
-    return render_template('add_title.jinja-html', form=form)
+# @api.route("/admin/title")
+# def show_form() -> str:
+#     form = TitleForm()  # type: ignore
+#     return render_template('add_title.jinja-html', form=form)
 
 
 @api.route("/composers/create", methods=['POST'])
 def create_composer():
-    # try:
-    print("HERE")
-    form = ComposerForm()
-    print(f"what in the form {form.validate()}")
-    for property, value in vars(form.meta).items():
-        print(property, ":", value)
-    if form.validate():
-        composer_name = form.name.data
-        year_born = form.born.data
-        year_deceased = form.deceased.data
-        nationality = form.nationality.data
+    try:
+        # extract form data from the request object
+        composer_name = request.form.get('name')
+        year_born = request.form.get('born')
+        year_deceased = request.form.get('deceased')
+        nationality = request.form.get('nationality')
 
-    else:
-        print("TEST FAIL")
+        composer = Composer(name=composer_name, year_born=year_born,
+                            year_deceased=year_deceased, nationality=nationality)
+
+        composer.insert()
+
+        slctn = Composer.query.order_by(Composer.id).all()
+        current_slctn = paginate_results(request, slctn)
+
+        data = {
+            'success': True,
+            'created': composer.id,
+            'composers': current_slctn,
+            'total_Composers': len(slctn)
+        }
+
+        return jsonify(data)
+
+    except Exception as e:
+        print(e)
         return abort(400)
 
-    composer = Composer(name=composer_name, year_born=year_born,
-                        year_deceased=year_deceased, nationality=nationality)
+    # render_template("composers.jinja-html", data=data)
 
-    composer.insert()
-
-    slctn = Composer.query.order_by(Composer.id).all()
-    current_slctn = paginate_results(request, slctn)
-    data = {
+    return jsonify({
         'success': True,
         'created': composer.id,
         'composers': current_slctn,
         'total_Composers': len(slctn)
-        
-    }
+    })  # type: ignore
     
-    
-    render_template("composers.jinja-html", data=data)
-
-    # return jsonify({
-    #     'success': True,
-    #     'created': composer.id,
-    #     'composers': current_slctn,
-    #     'total_Composers': len(slctn)
-    # })  # type: ignore
-    # except:
-    #     abort(405)
 
 
 @api.route("/composers/<int:composer_id>")
@@ -202,14 +197,14 @@ def get_performers():
     })  # type: ignore
 
 
-@api.route('/performers/create', methods=['GET'])
-def create_performer_form():
-    from .forms import PerformerForm
-    # form = VenueForm(genres_choices=choices)
-    form = PerformerForm()
-#   form.genres.choices = models.get_choices()
-    # type: ignore
-    return render_template('forms/new_performer.html', form=form)
+# @api.route('/performers/create', methods=['GET'])
+# def create_performer_form():
+#     from .forms import PerformerForm
+#     # form = VenueForm(genres_choices=choices)
+#     form = PerformerForm()
+# #   form.genres.choices = models.get_choices()
+#     # type: ignore
+#     return render_template('forms/new_performer.html', form=form)
 
 
 @api.route("/performers/create", methods=['POST'])
