@@ -15,7 +15,7 @@ class Composition(db.Model):  # type: ignore
     image = Column(db.LargeBinary)
     release_date = Column(Date)
     composer_id = Column(Integer, ForeignKey('composers.id'))
-    style_id = Column(Integer, ForeignKey('style.id'))
+    style_id = Column(Integer, ForeignKey('styles.id'))
 
     def __init__(
         self,

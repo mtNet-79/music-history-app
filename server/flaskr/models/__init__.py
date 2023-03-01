@@ -18,3 +18,4 @@ from .composition import Composition
 from .recording import Recording
 from .title import Title
 from .nation import Nation
+from .user import User
